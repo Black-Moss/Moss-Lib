@@ -1,14 +1,16 @@
-﻿using BepInEx;
-using BepInEx.Configuration;
+﻿using System;
+using System.Collections.Generic;
+using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using MossLib.Locale;
+using MossLib.Example;
 
 namespace MossLib
 {
-    [BepInPlugin("blackmoss.mosslib", "Moss Lib", "1.0.0")]
+    [BepInPlugin(Guid, Name, "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
+        // ReSharper disable once MemberCanBePrivate.Global
         internal new static ManualLogSource Logger;
         internal const string Guid = "blackmoss.mosslib";
         internal const string Name = "Moss Lib";
@@ -20,10 +22,17 @@ namespace MossLib
         {
             Logger = base.Logger;
             Instance = this;
+            
+            ModLocale.Initialize(Logger);
             _harmony.PatchAll();
-            ModLocaleUtility.Initialize(Guid, Name, Logger);
+            
+            Logger.LogInfo(StringDictionary("log", "welcome"));
+        }
 
-            Logger.LogInfo($"Welcome to {Name}!");
+        private static string StringDictionary(string dictionary, string key)
+        {
+            Dictionary<string, string> stringDictionary = ModLocale.GetStringDictionary(dictionary);
+            return stringDictionary[key];
         }
     }
 }

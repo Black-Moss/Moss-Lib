@@ -1,3 +1,5 @@
 ﻿{
-  "log.test": "TEST!"
+  "log": {
+    "welcome": "Welcome!"
+  }
 }
