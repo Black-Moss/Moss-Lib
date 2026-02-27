@@ -29,23 +29,23 @@ public class ModCommand : ModCommandBase
         {
             ConsoleScript.Commands.Add(new Command(
                 "testhello", 
-                "TEST HELLO",
+                ModLocale.GetFormat("command.testhello"),
                 args =>
                 {
                     Instance.CheckForWorld();
                     
-                    var message = "Hello from MossLib!";
+                    var message = ModLocale.GetFormat("testhello.message");
                     if (args.Length > 1)
                     {
-                        message = $"Hello, {args[1]}!";
+                        message = ModLocale.GetFormat("testhello.message", args[1]);
                     }
                     
                     PlayerCamera.main.DoAlert(message);
-                    Instance.LogToConsole($"Greetings: {message}");
-                    Instance.Logger.LogInfo($"Command executed: hello - {message}");
+                    Instance.LogToConsole(ModLocale.GetFormat("testhello.console", message));
+                    Instance.Logger.LogInfo(ModLocale.GetFormat("testhello.log", message));
                 },
                 null,
-                ("name", "可选的名称参数")
+                ("name", ModLocale.GetFormat("testhello.input"))
             ));
         }
     }

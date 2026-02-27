@@ -1,5 +1,14 @@
 ﻿{
   "log": {
     "welcome": "Welcome!"
+  },
+  "command": {
+    "testhello": "TEST HELLO"
+  },
+  "testhello": {
+    "message": "Hello World by Moss Lib! {0}!",
+    "input": "Name (optional)",
+    "console": "Greetings: {}",
+    "log": "Command executed: hello - {}"
   }
 }

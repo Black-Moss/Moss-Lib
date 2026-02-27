@@ -20,7 +20,6 @@ public abstract class ModLocaleBase
     private JObject _currentLang = new();
     private JObject _englishLang = new();
     
-    // 移除静态 Initialize 方法，改为实例方法
     protected void Initialize(ManualLogSource logger, string pluginGuid, string pluginName, System.Reflection.Assembly pluginAssembly, Harmony harmonyInstance = null)
     {
         if (_isInitialized)
@@ -43,18 +42,11 @@ public abstract class ModLocaleBase
             _isInitialized = true;
         }
     }
-    
-    [System.Obsolete("Use instance Initialize method instead")]
-    protected static void Initialize(ManualLogSource logger, string pluginGuid, string pluginName, Harmony harmonyInstance = null)
-    {
-        logger.LogError("Static Initialize method is deprecated. Please use instance method with plugin assembly parameter.");
-    }
 
     private void LoadLanguageFiles()
     {
         var currentLangName = PlayerPrefs.GetString("locale", "EN");
     
-        // 直接使用实例字段，不再需要 null 检查
         var pluginAssembly = _pluginAssembly;
         var pluginDirectory = Path.GetDirectoryName(pluginAssembly.Location);
     
@@ -181,7 +173,6 @@ public abstract class ModLocaleBase
         }
     }
 
-    // 新增重载方法，专门支持int和float类型
     protected string GetStringFormatted(string key, int arg)
     {
         return GetStringFormatted(key, (object)arg);

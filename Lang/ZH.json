@@ -1,5 +1,14 @@
 ﻿{
   "log": {
     "welcome": "欢迎！"
+  },
+  "command": {
+    "testhello": "测试HELLO"
+  },
+  "testhello": {
+    "message": "你好世界 by Moss Lib! {0}!",
+    "input": "名称（可选）",
+    "console": "问候：{}",
+    "log": "指令已执行 - {}"
   }
 }
