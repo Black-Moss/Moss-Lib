@@ -24,15 +24,11 @@ namespace MossLib
             Instance = this;
             
             ModLocale.Initialize(Logger);
+            ModCommand.Initialize(Logger);
+            
             _harmony.PatchAll();
             
-            Logger.LogInfo(StringDictionary("log", "welcome"));
-        }
-
-        private static string StringDictionary(string dictionary, string key)
-        {
-            Dictionary<string, string> stringDictionary = ModLocale.GetStringDictionary(dictionary);
-            return stringDictionary[key];
+            Logger.LogInfo(ModLocale.GetFormat("log.welcome"));
         }
     }
 }

@@ -1,29 +1,27 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
-namespace MossLib.Locale;
+namespace MossLib.Base;
 
 public abstract class ModLocaleBase
 {
-    private static readonly object _lock = new object();
-    private static ManualLogSource _log;
-    private static string _pluginGuid;
-    private static string _pluginName;
-    private static bool _isInitialized;
+    private static readonly object Lock = new();
+    private ManualLogSource _log;
+    private bool _isInitialized;
+    private System.Reflection.Assembly _pluginAssembly;
+
+    private const string LangDirectory = "Lang";
+    private JObject _currentLang = new();
+    private JObject _englishLang = new();
     
-    private static readonly string LangDirectory = "Lang";
-    private static JObject _currentLang = new();
-    private static JObject _englishLang = new();
-    
-    protected static void Initialize(ManualLogSource logger, string pluginGuid, string pluginName, Harmony harmonyInstance = null)
+    // 移除静态 Initialize 方法，改为实例方法
+    protected void Initialize(ManualLogSource logger, string pluginGuid, string pluginName, System.Reflection.Assembly pluginAssembly, Harmony harmonyInstance = null)
     {
         if (_isInitialized)
         {
@@ -31,43 +29,42 @@ public abstract class ModLocaleBase
             return;
         }
 
-        lock (_lock)
+        lock (Lock)
         {
             if (_isInitialized) return;
             
             _log = logger;
-            _pluginGuid = pluginGuid;
-            _pluginName = pluginName;
+            _pluginAssembly = pluginAssembly;
             
             var harmony = harmonyInstance ?? new Harmony($"{pluginGuid}.modlocale");
-            harmony.PatchAll(typeof(ModLocaleBase));
+            harmony.PatchAll(GetType());
                 
-            
             LoadLanguageFiles(); 
             _isInitialized = true;
-            
         }
     }
     
-    public static void ReloadLanguageFiles()
+    [System.Obsolete("Use instance Initialize method instead")]
+    protected static void Initialize(ManualLogSource logger, string pluginGuid, string pluginName, Harmony harmonyInstance = null)
     {
-        if (!_isInitialized)
-        {
-            _log?.LogWarning("ModLocaleBase is not initialized, cannot reload language files");
-            return;
-        }
-        
-        lock (_lock)
-        {
-            LoadLanguageFiles();
-        }
+        logger.LogError("Static Initialize method is deprecated. Please use instance method with plugin assembly parameter.");
     }
 
-    private static void LoadLanguageFiles()
+    private void LoadLanguageFiles()
     {
         var currentLangName = PlayerPrefs.GetString("locale", "EN");
-        var pluginPath = new DirectoryInfo(Path.Combine(Paths.PluginPath, _pluginName));
-        var langDirectory = Path.Combine(pluginPath.FullName, LangDirectory);
+    
+        // 直接使用实例字段，不再需要 null 检查
+        var pluginAssembly = _pluginAssembly;
+        var pluginDirectory = Path.GetDirectoryName(pluginAssembly.Location);
+    
+        if (string.IsNullOrEmpty(pluginDirectory))
+        {
+            _log?.LogError("Failed to get plugin directory");
+            return;
+        }
+    
+        var langDirectory = Path.Combine(pluginDirectory, LangDirectory);
         
         if (!Directory.Exists(langDirectory))
         {
@@ -94,8 +91,8 @@ public abstract class ModLocaleBase
             _log?.LogError($"Error occurred while loading language files: {ex.Message}");
         }
     }
-    
-    private static void LoadLanguageFile(string filePath, ref JObject target, string fileName)
+
+    private void LoadLanguageFile(string filePath, ref JObject target, string fileName)
     {
         if (File.Exists(filePath))
         {
@@ -117,8 +114,8 @@ public abstract class ModLocaleBase
             target = new JObject();
         }
     }
-    
-    internal static string GetString(string key)
+
+    protected string GetString(string key)
     {
         try
         {
@@ -145,25 +142,33 @@ public abstract class ModLocaleBase
         }
     }
     
+    protected string GetStringOnDictionary(string dictionary, string key)
+    {
+        Dictionary<string, string> stringDictionary = GetStringDictionary(dictionary);
+        return stringDictionary[key];
+    }
+
     protected string[] GetStringArray(string key)
     {
         return TryGetValue<JArray>(key, out var jsonArray, _currentLang, _englishLang)
             ? jsonArray.Select(token => token.ToString()).ToArray()
-            : new string[0];
+            : [];
     }
-    
-    internal static Dictionary<string, string> GetStringDictionary(string key)
+
+    protected Dictionary<string, string> GetStringDictionary(string key)
     {
         return TryGetValue<JObject>(key, out var jsonObject, _currentLang, _englishLang)
             ? jsonObject.ToObject<Dictionary<string, string>>() ?? new Dictionary<string, string>()
             : new Dictionary<string, string>();
     }
-    
+
     protected string GetStringFormatted(string key, params object[] args)
     {
         var template = GetString(key);
-        if (string.IsNullOrEmpty(template))
+        if (string.IsNullOrEmpty(template) || (template.StartsWith("[") && template.EndsWith("]")))
+        {
             return template;
+        }
             
         try
         {
@@ -171,11 +176,43 @@ public abstract class ModLocaleBase
         }
         catch (System.FormatException ex)
         {
-            _log?.LogError($"String formatting failed Key: {key}, Error: {ex.Message}");
+            _log?.LogError($"String formatting failed Key: {key}, Template: {template}, Error: {ex.Message}");
             return template;
         }
     }
-    
+
+    // 新增重载方法，专门支持int和float类型
+    protected string GetStringFormatted(string key, int arg)
+    {
+        return GetStringFormatted(key, (object)arg);
+    }
+
+    protected string GetStringFormatted(string key, float arg)
+    {
+        return GetStringFormatted(key, (object)arg);
+    }
+
+    protected string GetStringFormatted(string key, int arg1, int arg2)
+    {
+        return GetStringFormatted(key, (object)arg1, (object)arg2);
+    }
+
+    protected string GetStringFormatted(string key, float arg1, float arg2)
+    {
+        return GetStringFormatted(key, (object)arg1, (object)arg2);
+    }
+
+    protected string GetStringFormatted(string key, int arg1, float arg2)
+    {
+        return GetStringFormatted(key, (object)arg1, (object)arg2);
+    }
+
+    protected string GetStringFormatted(string key, float arg1, int arg2)
+    {
+        return GetStringFormatted(key, (object)arg1, (object)arg2);
+    }
+
+
     private static JToken GetJsonValue(JObject jsonObject, string path)
     {
         if (jsonObject == null || string.IsNullOrEmpty(path))
@@ -220,8 +257,8 @@ public abstract class ModLocaleBase
         
         return current;
     }
-    
-    private static bool TryGetValue<T>(string key, out T result, JObject currentLang, JObject englishLang) where T : JToken
+
+    private bool TryGetValue<T>(string key, out T result, JObject currentLang, JObject englishLang) where T : JToken
     {
         result = GetJsonValue(currentLang, key) as T;
         if (result != null && result.Type != JTokenType.Null) 
@@ -238,11 +275,9 @@ public abstract class ModLocaleBase
         result = null;
         return false;
     }
-    
+
     protected bool HasKey(string key)
     {
         return GetJsonValue(_currentLang, key) != null || GetJsonValue(_englishLang, key) != null;
     }
-    
-    public static string CurrentLanguage => PlayerPrefs.GetString("locale", "EN");
 }
