@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>BlackMossTemplate</AssemblyName>
     <Product>BlackMossTemplate</Product>
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -11,10 +10,10 @@
 			https://nuget.bepinex.dev/v3/index.json;
 			https://nuget.samboy.dev/v3/index.json
 		</RestoreAdditionalProjectSources>
-    <RootNamespace>BlackMossTemplate</RootNamespace>
     <Platforms>AnyCPU;x64;x86</Platforms>
     <PackageProjectUrl>https://github.com/Black-Moss/BlackMossTemplate</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Black-Moss/BlackMossTemplate</RepositoryUrl>
+    <PackageId>MossLib</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
